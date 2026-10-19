@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lga-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lga
+      POSTGRES_PASSWORD: lga_secret_2026
+      POSTGRES_DB: lifeline_academy
+    ports:
+      - "5432:5432"
+    volumes:
+      - lga_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lga -d lifeline_academy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lga-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://lga:lga_secret_2026@db:5432/lifeline_academy?schema=public
+      JWT_SECRET: lifeline-global-academy-jwt-secret-change-in-production-2026
+      JWT_EXPIRES_IN: 8h
+      PORT: 4000
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  lga_pgdata:
